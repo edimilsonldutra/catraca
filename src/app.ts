@@ -3,6 +3,7 @@ import { authRoutes } from './auth/routes.js'
 import { currentUser, loadSession } from './auth/session.js'
 import { pool } from './db/pool.js'
 import { organizerRoutes } from './organizer/routes.js'
+import { salesRoutes } from './sales/routes.js'
 import { html, page } from './shared/html.js'
 
 export function createApp() {
@@ -22,10 +23,7 @@ export function createApp() {
   app.use(loadSession)
   app.use(authRoutes)
   app.use(organizerRoutes)
-
-  app.get('/', (_req, res) => {
-    res.send(page('Vitrine', currentUser(res), html`<h1>Catraca</h1><p>Em breve, os eventos à venda.</p>`))
-  })
+  app.use(salesRoutes)
 
   app.use((_req, res) => {
     res.status(404).send(page('Não encontrado', currentUser(res), html`<h1>Página não encontrada</h1>`))

@@ -26,8 +26,12 @@
   cancelado), `sold_out`.
 - **Gateway simulado** (`F3.P4`): na compra, o final do cartão define o resultado e o atraso
   (0001: aprova em 2–5 s; 0002: recusa em 2–5 s; 0003: aprova em 30–40 s; 0004: recusa em 30–40 s;
-  outro: recusa em 2–5 s). Um processo de fundo, a cada 500 ms, aplica as respostas vencidas com
-  `UPDATE tickets SET status = gateway_result WHERE status = 'pending' AND gateway_due_at <= now()`. Só
+  outro: recusa em 2–5 s). Um processo de fundo, a cada 200 ms, aplica as respostas vencidas com
+  `UPDATE tickets SET status = gateway_result WHERE status = 'pending' AND gateway_due_at <= now()`.
+  As janelas do brief valem da compra até o status mudar, que acontece na primeira rodada depois do
+  vencimento; por isso o vencimento é sorteado longe das bordas (2,2–3,6 s e 30,5–38,0 s, contados do
+  instante da gravação) e um teste confere que vencimento máximo + intervalo + margem cabe na janela.
+  Correção feita após a avaliação de 7d53ed3, que mediu confirmações do 0001 em 5,25 s e 5,49 s. Só
   ingresso ainda `pending` muda: cancelamento ou resposta posterior nunca se sobrepõem (R08, R11). Como o
   estado fica no banco, uma reinicialização não perde respostas. `GATEWAY_DELAY_SCALE` reduz o atraso nos
   testes; o padrão é 1.

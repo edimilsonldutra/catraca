@@ -45,7 +45,7 @@ export async function purchaseTicket(input: PurchaseInput): Promise<PurchaseResu
     for (let attempt = 0; attempt < 5; attempt++) {
       const inserted = await db.query<TicketRecord>(
         `INSERT INTO tickets (id, code, event_id, user_id, buyer_email, channel, price_cents, card_last4, gateway_result, gateway_due_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now() + ($10 || ' milliseconds')::interval)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, clock_timestamp() + ($10 || ' milliseconds')::interval)
          ON CONFLICT (code) DO NOTHING RETURNING *`,
         [
           newId('tkt'),

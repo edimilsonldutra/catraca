@@ -4,19 +4,27 @@ import { pool } from '../db/pool.js'
 export type GatewayResult = 'confirmed' | 'declined'
 
 // Gateway simulado (F3.P4): o final do cartão define a resposta e quando ela chega.
-const RULES: Record<string, { result: GatewayResult; minMs: number; maxMs: number }> = {
-  '0001': { result: 'confirmed', minMs: 2_000, maxMs: 5_000 },
-  '0002': { result: 'declined', minMs: 2_000, maxMs: 5_000 },
-  '0003': { result: 'confirmed', minMs: 30_000, maxMs: 40_000 },
-  '0004': { result: 'declined', minMs: 30_000, maxMs: 40_000 },
+// O brief dá as janelas (2–5 s e 30–40 s) contadas da compra até o status mudar. O status muda
+// na primeira rodada do processo depois do vencimento, então o sorteio fica longe das bordas:
+// vencimento + intervalo do processo + tempo de gravação ainda cabem na janela (ver
+// GATEWAY_WINDOWS e o teste "prazo total").
+export const GATEWAY_WINDOWS = {
+  fast: { minMs: 2_000, maxMs: 5_000, drawMinMs: 2_200, drawMaxMs: 3_600 },
+  slow: { minMs: 30_000, maxMs: 40_000, drawMinMs: 30_500, drawMaxMs: 38_000 },
+} as const
+
+const RULES: Record<string, { result: GatewayResult; window: keyof typeof GATEWAY_WINDOWS }> = {
+  '0001': { result: 'confirmed', window: 'fast' },
+  '0002': { result: 'declined', window: 'fast' },
+  '0003': { result: 'confirmed', window: 'slow' },
+  '0004': { result: 'declined', window: 'slow' },
 }
-const OTHER = { result: 'declined' as const, minMs: 2_000, maxMs: 5_000 }
+const OTHER = { result: 'declined' as const, window: 'fast' as const }
 
 export function gatewayDecision(cardNumber: string, random = Math.random) {
   const rule = RULES[cardNumber.slice(-4)] ?? OTHER
-  // Margem de 100 ms em cada ponta: a resposta fica dentro da janela mesmo com o intervalo do processo.
-  const span = rule.maxMs - rule.minMs - 200
-  const delayMs = Math.round((rule.minMs + 100 + random() * span) * config.gatewayDelayScale)
+  const w = GATEWAY_WINDOWS[rule.window]
+  const delayMs = Math.round((w.drawMinMs + random() * (w.drawMaxMs - w.drawMinMs)) * config.gatewayDelayScale)
   return { result: rule.result, delayMs }
 }
 

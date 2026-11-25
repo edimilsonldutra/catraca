@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { pool } from '../db/pool.js'
 import { createEventAs, inDays, publishAs } from '../test/events.js'
 import { accounts, app, loginAs, resetDatabase } from '../test/helpers.js'
-import { applyDueGatewayResponses, gatewayDecision } from './gateway.js'
+import { config } from '../config.js'
+import { applyDueGatewayResponses, GATEWAY_WINDOWS, gatewayDecision } from './gateway.js'
 import { purchaseTicket } from './purchase.js'
 import { findTicketById, occupiedSeats } from './tickets.js'
 
@@ -44,6 +45,16 @@ describe('gateway simulado (F3.P4, R08)', () => {
         expect(d.delayMs).toBeGreaterThanOrEqual(min * scale)
         expect(d.delayMs).toBeLessThanOrEqual(max * scale)
       }
+    }
+  })
+
+  it('prazo total: vencimento + intervalo do processo + margem cabe na janela do brief', () => {
+    // A janela do brief vale até o status mudar, e o status só muda na rodada seguinte do processo.
+    // Margem de 1 s para gravação, carga e a medição de quem observa de fora.
+    const margin = 1_000
+    for (const w of Object.values(GATEWAY_WINDOWS)) {
+      expect(w.drawMinMs).toBeGreaterThanOrEqual(w.minMs)
+      expect(w.drawMaxMs + config.gatewayPollMs + margin).toBeLessThanOrEqual(w.maxMs)
     }
   })
 

@@ -13,5 +13,5 @@ export const config = {
   partnerApiKey: process.env.PARTNER_API_KEY || 'catraca-parceiro-demo',
   // Escala os atrasos do gateway simulado (1 = os tempos do brief). Os testes usam 0.01.
   gatewayDelayScale: number('GATEWAY_DELAY_SCALE', 1),
-  gatewayPollMs: number('GATEWAY_POLL_MS', 500),
+  gatewayPollMs: number('GATEWAY_POLL_MS', 200),
 }

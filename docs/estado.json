@@ -2,11 +2,11 @@
   "projeto": "catraca",
   "atualizado_em": "2026-11-25",
   "features": [
-    { "id": "F1", "nome": "Fundação: harness, banco e contas", "wave": "W1", "status": "em_implementacao", "relatorio": null },
-    { "id": "F2", "nome": "Eventos do organizador", "wave": "W2", "status": "planejada", "relatorio": null },
-    { "id": "F3", "nome": "Vitrine, compra e gateway", "wave": "W3", "status": "planejada", "relatorio": null },
-    { "id": "F4", "nome": "API de parceiros", "wave": "W4", "status": "planejada", "relatorio": null },
-    { "id": "F5", "nome": "Check-in e painel", "wave": "W4", "status": "planejada", "relatorio": null },
+    { "id": "F1", "nome": "Fundação: harness, banco e contas", "wave": "W1", "status": "concluida", "relatorio": "docs/features/F1-fundacao/avaliacoes/2026-11-25-a3ed02d.md" },
+    { "id": "F2", "nome": "Eventos do organizador", "wave": "W2", "status": "em_avaliacao", "relatorio": null },
+    { "id": "F3", "nome": "Vitrine, compra e gateway", "wave": "W3", "status": "implementada", "relatorio": null },
+    { "id": "F4", "nome": "API de parceiros", "wave": "W4", "status": "em_implementacao", "relatorio": null },
+    { "id": "F5", "nome": "Check-in e painel", "wave": "W4", "status": "em_implementacao", "relatorio": null },
     { "id": "F6", "nome": "Cancelamento", "wave": "W5", "status": "planejada", "relatorio": null }
   ]
 }

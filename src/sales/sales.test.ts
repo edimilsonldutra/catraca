@@ -25,6 +25,13 @@ async function publishedEvent(fields: Record<string, string> = {}) {
   return { a, id }
 }
 
+// Só o card do evento na vitrine: verificações não "atravessam" para o card de outro evento.
+function cardOf(page: string, eventId: string) {
+  const start = page.indexOf(`id="${eventId}"`)
+  if (start < 0) throw new Error(`evento ${eventId} não está na página`)
+  return page.slice(start, page.indexOf('</article>', start))
+}
+
 const apiBuy = (eventId: string, card: string, email = 'parceiro@ex.com') =>
   purchaseTicket({ eventId, channel: 'partner', userId: null, buyerEmail: email, cardNumber: card })
 
@@ -108,17 +115,22 @@ describe('compra pela vitrine (R05, R06, R07, R09)', () => {
   it('pendente ocupa vaga, esgota a vitrine e a recusa libera (R05, R07, R08)', async () => {
     const { id } = await publishedEvent({ name: 'Lotação Um', capacity: '1' })
     const p = await loginAs(accounts.participant)
-    await p.post(`/events/${id}/purchase`).type('form').send({ cardNumber: '4000000000000002' })
-    const soldOut = await request(app).get('/')
-    expect(soldOut.text).toMatch(new RegExp(`id="${id}"[\\s\\S]*?Ingressos esgotados`))
+    // Recusa lenta (0004): o ingresso fica pendente bem mais que o tempo das verificações abaixo,
+    // mesmo que algum processo do gateway esteja aplicando respostas no mesmo banco.
+    await p.post(`/events/${id}/purchase`).type('form').send({ cardNumber: '4000000000000004' })
+    const soldOut = cardOf((await request(app).get('/')).text, id)
+    expect(soldOut).toContain('Ingressos esgotados')
+    expect(soldOut).toContain('Vagas disponíveis: <span data-campo="vagas">0</span>')
 
     const again = await p.post(`/events/${id}/purchase`).type('form').send({ cardNumber: '4000000000000001' })
     expect(again.status).toBe(409)
-    expect(again.text).toContain('Ingressos esgotados')
+    expect(cardOf(again.text, id)).toContain('Ingressos esgotados')
 
-    await settle()
+    await settle(450)
     expect(await occupiedSeats(id)).toBe(0)
-    expect((await request(app).get('/')).text).toMatch(new RegExp(`id="${id}"[\\s\\S]*?Vagas disponíveis: <span data-campo="vagas">1</span>`))
+    const freed = cardOf((await request(app).get('/')).text, id)
+    expect(freed).toContain('Vagas disponíveis: <span data-campo="vagas">1</span>')
+    expect(freed).not.toContain('Ingressos esgotados')
   })
 
   it('cartão sem 16 dígitos é rejeitado antes de criar o ingresso', async () => {

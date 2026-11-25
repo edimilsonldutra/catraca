@@ -1,0 +1,26 @@
+# Ambiente efêmero dos gates: Postgres em memória e um container com o código e as
+# dependências de desenvolvimento. scripts/gates.sh sobe, roda e derruba tudo.
+services:
+  db-test:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: catraca
+      POSTGRES_PASSWORD: catraca
+      POSTGRES_DB: catraca_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U catraca -d catraca_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
+  gates:
+    build:
+      context: .
+      target: gates
+    environment:
+      DATABASE_URL: postgresql://catraca:catraca@db-test:5432/catraca_test
+    depends_on:
+      db-test:
+        condition: service_healthy

@@ -51,7 +51,7 @@ Chave de parceiro (`$KEY`, cabeçalho `X-Api-Key`): `catraca-parceiro-demo`.
 
 Cada pasta de feature tem `spec.md`, `plano.md`, `contrato.md` e `avaliacoes/`, com um relatório por
 avaliação (`<data>-<commit>.md`). Relatório commitado não é alterado: uma correção gera nova avaliação e
-novo relatório. A F3, por exemplo, tem o relatório que reprovou o `7d53ed3` e o da reavaliação.
+novo relatório. A F3 e a F5 têm, cada uma, o relatório que reprovou e o da reavaliação.
 
 **Wave paralela (W4, F4 e F5):**
 
@@ -105,5 +105,9 @@ Claude Code, com contexto vazio, que recebia só o commit, o contrato e o PRD.
   com evidência. O relatório era commitado sem edição.
 - **Implementação também separada:** os implementadores da wave paralela também foram subagentes
   separados, um por worktree.
-- **Reprovação:** item reprovado (caso da F3) voltou para correção e para uma avaliação nova, com
-  relatório novo.
+- **Reprovação:** item reprovado voltou para correção e para uma avaliação nova, com relatório novo.
+  - **F3:** o avaliador mediu confirmações do cartão 0001 em 5,25 s. O vencimento do gateway foi
+    afastado das bordas da janela.
+  - **F5:** os gates falharam de forma intermitente porque os testes dormiam esperando o gateway. Eles
+    passaram a usar um relógio de teste (`src/test/gateway.ts`) e ficaram estáveis mesmo com a CPU
+    ocupada.

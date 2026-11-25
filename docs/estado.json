@@ -3,10 +3,10 @@
   "atualizado_em": "2026-11-25",
   "features": [
     { "id": "F1", "nome": "Fundação: harness, banco e contas", "wave": "W1", "status": "concluida", "relatorio": "docs/features/F1-fundacao/avaliacoes/2026-11-25-a3ed02d.md" },
-    { "id": "F2", "nome": "Eventos do organizador", "wave": "W2", "status": "em_avaliacao", "relatorio": null },
-    { "id": "F3", "nome": "Vitrine, compra e gateway", "wave": "W3", "status": "implementada", "relatorio": null },
-    { "id": "F4", "nome": "API de parceiros", "wave": "W4", "status": "em_implementacao", "relatorio": null },
-    { "id": "F5", "nome": "Check-in e painel", "wave": "W4", "status": "em_implementacao", "relatorio": null },
-    { "id": "F6", "nome": "Cancelamento", "wave": "W5", "status": "planejada", "relatorio": null }
+    { "id": "F2", "nome": "Eventos do organizador", "wave": "W2", "status": "concluida", "relatorio": "docs/features/F2-eventos/avaliacoes/2026-11-25-41311a8.md" },
+    { "id": "F3", "nome": "Vitrine, compra e gateway", "wave": "W3", "status": "concluida", "relatorio": "docs/features/F3-vitrine-compra/avaliacoes/2026-11-25-b6d35a8.md" },
+    { "id": "F4", "nome": "API de parceiros", "wave": "W4", "status": "concluida", "relatorio": "docs/features/F4-api-parceiros/avaliacoes/2026-11-25-da0784d.md", "pr": "https://github.com/edimilsonldutra/catraca/pull/1" },
+    { "id": "F5", "nome": "Check-in e painel", "wave": "W4", "status": "concluida", "relatorio": "docs/features/F5-checkin-painel/avaliacoes/2026-11-25-e64e648.md", "pr": "https://github.com/edimilsonldutra/catraca/pull/2" },
+    { "id": "F6", "nome": "Cancelamento", "wave": "W5", "status": "concluida", "relatorio": "docs/features/F6-cancelamento/avaliacoes/2026-11-25-e64e648.md" }
   ]
 }

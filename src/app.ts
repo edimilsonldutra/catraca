@@ -3,6 +3,7 @@ import { authRoutes } from './auth/routes.js'
 import { currentUser, loadSession } from './auth/session.js'
 import { pool } from './db/pool.js'
 import { organizerRoutes } from './organizer/routes.js'
+import { partnerRoutes } from './partner/routes.js'
 import { salesRoutes } from './sales/routes.js'
 import { html, page } from './shared/html.js'
 
@@ -20,6 +21,7 @@ export function createApp() {
     }
   })
 
+  app.use('/api/partner', partnerRoutes)
   app.use(loadSession)
   app.use(authRoutes)
   app.use(organizerRoutes)

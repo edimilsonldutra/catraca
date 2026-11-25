@@ -1,22 +1,16 @@
 import request from 'supertest'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { pool } from '../db/pool.js'
-import { applyDueGatewayResponses } from '../sales/gateway.js'
 import { purchaseTicket } from '../sales/purchase.js'
 import { findTicketById, type TicketRecord } from '../sales/tickets.js'
 import { createEventAs, publishAs } from '../test/events.js'
 import { accounts, app, loginAs, resetDatabase } from '../test/helpers.js'
 import { CHECKIN_MESSAGES, checkIn } from './service.js'
+import { advanceGateway, FAST_RESPONSES } from '../test/gateway.js'
 
 beforeAll(resetDatabase)
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-// Com GATEWAY_DELAY_SCALE=0.01, 2–5 s viram 20–50 ms e 30–40 s viram 300–400 ms.
-async function settle(ms = 120) {
-  await sleep(ms)
-  await applyDueGatewayResponses()
-}
 
 async function buy(eventId: string, card: string): Promise<TicketRecord> {
   const r = await purchaseTicket({ eventId, channel: 'partner', userId: null, buyerEmail: 'parceiro@ex.com', cardNumber: card })
@@ -51,7 +45,7 @@ describe('check-in na gestão (R10, F5-C1, F5-C2)', () => {
     declined = await buy(e1, '4000000000000002')
     otherOfA = await buy(e2.id, '4000000000000001')
     otherOfB = await buy(eb.id, '4000000000000001')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
   })
 
   const post = (code: string) => a.post(`/organizer/events/${e1}/checkin`).type('form').send({ code })
@@ -93,14 +87,14 @@ describe('check-in na gestão (R10, F5-C1, F5-C2)', () => {
 
   it('compara o código sem diferenciar maiúsculas e sem espaços nas pontas', async () => {
     const t = await buy(e1, '4000000000000001')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
     const res = await post(`  ${t.code.toLowerCase()} `)
     expect(checkinMessage(res.text)).toBe('Entrada liberada')
   })
 
   it('F5-I6: organizador B no check-in de E1 → 404 sem dados e nada gravado (X06)', async () => {
     const t = await buy(e1, '4000000000000001')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
     const b = await loginAs(accounts.orgB)
     const res = await b.post(`/organizer/events/${e1}/checkin`).type('form').send({ code: t.code })
     expect(res.status).toBe(404)
@@ -119,7 +113,7 @@ describe('check-in na gestão (R10, F5-C1, F5-C2)', () => {
 
   it('check-ins simultâneos do mesmo código liberam só um (F5-C2)', async () => {
     const t = await buy(e1, '4000000000000001')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
     const results = await Promise.all(Array.from({ length: 10 }, () => checkIn(e1, t.code)))
     const admitted = results.filter((r) => r.outcome === 'admitted')
     expect(admitted).toHaveLength(1)
@@ -133,7 +127,7 @@ describe('ordem das mensagens de R10', () => {
     const used = await buy(id, '4000000000000001')
     const fresh = await buy(id, '4000000000000001')
     const slow = await buy(id, '4000000000000003')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
     expect((await checkIn(id, used.code)).message).toBe('Entrada liberada')
     // O cancelamento é de F6; aqui o status do evento é marcado direto para checar a ordem.
     await pool.query("UPDATE events SET status = 'cancelled' WHERE id = $1", [id])

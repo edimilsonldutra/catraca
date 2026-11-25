@@ -8,6 +8,6 @@ export default defineConfig({
     fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    env: { GATEWAY_DELAY_SCALE: '0.01', NODE_ENV: 'test' },
+    env: { NODE_ENV: 'test' },
   },
 })

@@ -31,6 +31,8 @@ servidor) com PostgreSQL 16, tudo em Docker Compose. O que o produto faz está e
 - Ao concluir uma feature, atualize `docs/estado.json` (status e relatório mais recente).
 - Regra de vagas: toda compra passa por `purchaseTicket` (`src/sales/`), que trava o evento. Nunca conte
   vagas fora dessa transação para decidir uma venda.
+- Testes não dependem do relógio: para simular a resposta do gateway use `advanceGateway(ms)` de
+  `src/test/gateway.ts`, nunca `sleep`. Nos testes os tempos são os do brief e nada muda sozinho.
 - O gateway só muda ingresso `pending`. Quem muda status de ingresso fora do gateway (cancelamento) faz
   isso numa transação com o evento travado.
 - Seções novas da página de gestão entram por `src/organizer/sections.ts`, não editando a página.

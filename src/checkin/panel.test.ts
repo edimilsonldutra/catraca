@@ -1,21 +1,15 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { findUserByEmail } from '../auth/users.js'
 import { pool } from '../db/pool.js'
-import { applyDueGatewayResponses } from '../sales/gateway.js'
 import { purchaseTicket, type PurchaseInput } from '../sales/purchase.js'
 import type { TicketRecord } from '../sales/tickets.js'
 import { createEventAs, inDays, publishAs } from '../test/events.js'
 import { accounts, loginAs, resetDatabase } from '../test/helpers.js'
+import { advanceGateway, ALL_RESPONSES, FAST_RESPONSES } from '../test/gateway.js'
 
 beforeAll(resetDatabase)
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-// Com GATEWAY_DELAY_SCALE=0.01, 2–5 s viram 20–50 ms e 30–40 s viram 300–400 ms.
-async function settle(ms = 120) {
-  await sleep(ms)
-  await applyDueGatewayResponses()
-}
 
 async function buy(input: Omit<PurchaseInput, 'buyerEmail'> & { buyerEmail?: string }): Promise<TicketRecord> {
   const r = await purchaseTicket({ buyerEmail: 'comprador@ex.com', ...input })
@@ -51,7 +45,7 @@ describe('painel do evento (R12, F5-C3, X07)', () => {
     const web = await buy({ eventId: id, channel: 'web', userId: participant.id, cardNumber: '4000000000000001' })
     await apiBuy(id, '4000000000000004')
     // A recusa do 0004 é lenta (300–400 ms com a escala dos testes); só então a vaga volta.
-    await settle(450)
+    await advanceGateway(ALL_RESPONSES)
     await apiBuy(id, '4000000000000001')
 
     const edit = await a
@@ -60,7 +54,7 @@ describe('painel do evento (R12, F5-C3, X07)', () => {
       .send({ name: 'Painel E1', startsAt: inDays(30), venue: 'Porão da Rua', capacity: '3', price: '150,00' })
     expect(edit.status).toBe(303)
     await apiBuy(id, '4000000000000001')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
 
     const res = await a.get(`/organizer/events/${id}`)
     expect(res.status).toBe(200)
@@ -86,7 +80,7 @@ describe('painel do evento (R12, F5-C3, X07)', () => {
     const refunded = await apiBuy(id, '4000000000000001')
     await apiBuy(id, '4000000000000001')
     await apiBuy(id, '4000000000000002')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
     await apiBuy(id, '4000000000000003')
     // O estorno é de F6; aqui o status é marcado direto para checar a contagem.
     await pool.query("UPDATE tickets SET status = 'refunded' WHERE id = $1", [refunded.id])

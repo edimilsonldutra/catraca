@@ -4,19 +4,14 @@ import { pool } from '../db/pool.js'
 import { createEventAs, inDays, publishAs } from '../test/events.js'
 import { accounts, app, loginAs, resetDatabase } from '../test/helpers.js'
 import { config } from '../config.js'
-import { applyDueGatewayResponses, GATEWAY_WINDOWS, gatewayDecision } from './gateway.js'
+import { GATEWAY_WINDOWS, gatewayDecision } from './gateway.js'
 import { purchaseTicket } from './purchase.js'
 import { findTicketById, occupiedSeats } from './tickets.js'
+import { advanceGateway, ALL_RESPONSES, FAST_RESPONSES } from '../test/gateway.js'
 
 beforeAll(resetDatabase)
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-// Com GATEWAY_DELAY_SCALE=0.01, 2–5 s viram 20–50 ms e 30–40 s viram 300–400 ms.
-async function settle(ms = 120) {
-  await sleep(ms)
-  await applyDueGatewayResponses()
-}
 
 async function publishedEvent(fields: Record<string, string> = {}) {
   const a = await loginAs(accounts.orgA)
@@ -37,7 +32,7 @@ const apiBuy = (eventId: string, card: string, email = 'parceiro@ex.com') =>
 
 describe('gateway simulado (F3.P4, R08)', () => {
   it('decide pelo final do cartão, dentro das janelas do brief', () => {
-    const scale = 0.01
+    const scale = config.gatewayDelayScale
     const cases: [string, string, number, number][] = [
       ['4000000000000001', 'confirmed', 2_000, 5_000],
       ['4000000000000002', 'declined', 2_000, 5_000],
@@ -72,11 +67,11 @@ describe('gateway simulado (F3.P4, R08)', () => {
     const slow = await apiBuy(id, '4000000000000003')
     if (!ok.ok || !no.ok || !slow.ok) throw new Error('compra falhou')
     expect(ok.ticket.status).toBe('pending')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
     expect((await findTicketById(ok.ticket.id))?.status).toBe('confirmed')
     expect((await findTicketById(no.ticket.id))?.status).toBe('declined')
     expect((await findTicketById(slow.ticket.id))?.status).toBe('pending')
-    await settle(450)
+    await advanceGateway(ALL_RESPONSES)
     expect((await findTicketById(slow.ticket.id))?.status).toBe('confirmed')
   })
 })
@@ -108,7 +103,7 @@ describe('compra pela vitrine (R05, R06, R07, R09)', () => {
     expect(mine).toContain('Jazz para Meus Ingressos')
     expect(mine).toContain('pendente')
     expect(mine).toMatch(/<code>[A-Z2-9]{8}<\/code>/)
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
     expect((await p.get('/me/tickets')).text).toContain('confirmado')
   })
 
@@ -126,7 +121,7 @@ describe('compra pela vitrine (R05, R06, R07, R09)', () => {
     expect(again.status).toBe(409)
     expect(cardOf(again.text, id)).toContain('Ingressos esgotados')
 
-    await settle(450)
+    await advanceGateway(ALL_RESPONSES)
     expect(await occupiedSeats(id)).toBe(0)
     const freed = cardOf((await request(app).get('/')).text, id)
     expect(freed).toContain('Vagas disponíveis: <span data-campo="vagas">1</span>')
@@ -185,7 +180,7 @@ describe('preço e lotação (R03, X03)', () => {
     const { a, id } = await publishedEvent({ capacity: '3' })
     await apiBuy(id, '4000000000000001')
     await apiBuy(id, '4000000000000003')
-    await settle()
+    await advanceGateway(FAST_RESPONSES)
     const fields = { name: 'Jazz no Porão', startsAt: inDays(30), venue: 'Porão da Rua', price: '100,00' }
     const lower = await a.post(`/organizer/events/${id}`).type('form').send({ ...fields, capacity: '1' })
     expect(lower.status).toBe(422)

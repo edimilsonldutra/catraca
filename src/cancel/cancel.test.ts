@@ -1,16 +1,15 @@
 import request from 'supertest'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { findEventById } from '../events/repository.js'
-import { applyDueGatewayResponses } from '../sales/gateway.js'
 import { purchaseTicket } from '../sales/purchase.js'
 import { findTicketById } from '../sales/tickets.js'
 import { createEventAs, inDays, publishAs } from '../test/events.js'
 import { accounts, app, loginAs, resetDatabase } from '../test/helpers.js'
+import { advanceGateway, ALL_RESPONSES, FAST_RESPONSES } from '../test/gateway.js'
 
 beforeAll(resetDatabase)
 
 const KEY = 'catraca-parceiro-demo'
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 async function buyApi(eventId: string, card: string) {
   const res = await request(app)
@@ -27,8 +26,7 @@ async function scenario() {
   await publishAs(a, id)
   const t5 = (await buyApi(id, '4000000000000003')).body as { ticketId: string; code: string }
   const t6 = (await buyApi(id, '4000000000000001')).body as { ticketId: string; code: string }
-  await sleep(80)
-  await applyDueGatewayResponses()
+  await advanceGateway(FAST_RESPONSES)
   expect((await findTicketById(t6.ticketId))?.status).toBe('confirmed')
   expect((await findTicketById(t5.ticketId))?.status).toBe('pending')
   return { a, id, t5, t6 }
@@ -43,8 +41,7 @@ describe('cancelamento (F6, R11)', () => {
     expect((await findTicketById(t6.ticketId))?.status).toBe('refunded')
     expect((await findTicketById(t5.ticketId))?.status).toBe('cancelled')
 
-    await sleep(450)
-    await applyDueGatewayResponses()
+    await advanceGateway(ALL_RESPONSES)
     expect((await findTicketById(t5.ticketId))?.status).toBe('cancelled')
     expect((await findTicketById(t6.ticketId))?.status).toBe('refunded')
   })
@@ -124,8 +121,7 @@ describe('cancelamento (F6, R11)', () => {
     )
     const cancel = a.post(`/organizer/events/${id}/cancel`)
     await Promise.all([...buys, cancel])
-    await sleep(80)
-    await applyDueGatewayResponses()
+    await advanceGateway(FAST_RESPONSES)
     const panel = (await a.get(`/organizer/events/${id}`)).text
     expect(panel.match(/data-campo="confirmados"[^>]*>([^<]*)</)?.[1]?.trim()).toBe('0')
     expect(panel.match(/data-campo="pendentes"[^>]*>([^<]*)</)?.[1]?.trim()).toBe('0')

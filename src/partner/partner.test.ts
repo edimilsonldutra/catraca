@@ -2,17 +2,16 @@ import request from 'supertest'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { config } from '../config.js'
 import { pool } from '../db/pool.js'
-import { applyDueGatewayResponses } from '../sales/gateway.js'
 import { occupiedSeats } from '../sales/tickets.js'
 import { createEventAs, publishAs } from '../test/events.js'
 import { accounts, app, loginAs, resetDatabase } from '../test/helpers.js'
+import { advanceGateway, FAST_RESPONSES } from '../test/gateway.js'
 
 beforeAll(resetDatabase)
 
 const KEY = config.partnerApiKey
 const VALID = { buyerEmail: 't@example.com', cardNumber: '4000000000000001' }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const apiGet = (path: string) => request(app).get(`/api/partner${path}`).set('X-Api-Key', KEY)
 const apiPost = (path: string, body: object | string) => {
@@ -157,8 +156,7 @@ describe('consulta de ingresso (F4-C5)', () => {
     const res = await apiGet(`/tickets/${ticketId}`)
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ ticketId, code: bought.body.code, eventId: id, status: 'pending', checkedIn: false })
-    await sleep(120)
-    await applyDueGatewayResponses()
+    await advanceGateway(FAST_RESPONSES)
     expect((await apiGet(`/tickets/${ticketId}`)).body.status).toBe('confirmed')
   })
 

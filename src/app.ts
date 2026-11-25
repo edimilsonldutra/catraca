@@ -1,6 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from 'express'
 import { authRoutes } from './auth/routes.js'
 import { currentUser, loadSession } from './auth/session.js'
+import { cancelRoutes } from './cancel/index.js'
 import { checkinRoutes } from './checkin/index.js'
 import { pool } from './db/pool.js'
 import { organizerRoutes } from './organizer/routes.js'
@@ -28,6 +29,7 @@ export function createApp() {
   app.use(organizerRoutes)
   app.use(salesRoutes)
   app.use(checkinRoutes)
+  app.use(cancelRoutes)
 
   app.use((_req, res) => {
     res.status(404).send(page('Não encontrado', currentUser(res), html`<h1>Página não encontrada</h1>`))
